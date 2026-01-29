@@ -84,14 +84,35 @@ mkdir -p /c/nbis
 Ainda no terminal `MSYS2 MINGW64`, na pasta `nist-nbis` (raiz do repositório clonado):
 
 ```bash
-find /c/projetos/nist-biometric-image-software-nbis -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION 2\.[0-9\.]*)/cmake_minimum_required(VERSION 3.5)/g' {} \;
+find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION 2\.[0-9\.]*)/cmake_minimum_required(VERSION 3.5)/g' {} \;
 ```
 
 E depois:
 
 ```bash
-find /c/projetos/nist-biometric-image-software-nbis -name "CMakeLists.txt" -exec sed -i 's/CMAKE_MINIMUM_REQUIRED\s*(VERSION\s*[0-9]\.[0-9][0-9]*\.*[0-9]*)/cmake_minimum_required(VERSION 3.5)/gI' {} \;
+find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/CMAKE_MINIMUM_REQUIRED\s*(VERSION\s*[0-9]\.[0-9][0-9]*\.*[0-9]*)/cmake_minimum_required(VERSION 3.5)/gI' {} \;
 ```
+
+### 🔧 Corrigir possível problema de variáveis globais duplicadas
+
+Abra o seguinte arquivo com nano:
+```bash
+nano /c/projetos/nist-nbis/rules.mak
+```
+
+Procure a linha que define `CFLAGS` (provavelmente algo como):
+
+```bash
+CFLAGS = -O2 -w -ansi ... ... ...
+```
+
+Adicione `-fcommon` no final:
+
+```bash
+CFLAGS = -O2 -w -ansi ... ... ... -fcommon
+```
+
+Para salvar no nano: `Ctrl+O` → `Enter` → `Ctrl+X`
 
 ## 📋 PASSO 4: Compilar o NBIS
 

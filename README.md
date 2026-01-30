@@ -43,11 +43,14 @@ Se o terminal fechar, abra novamente o `MSYS2 MINGW64` e continue:
 pacman -Su
 ```
 
-5) **Instale as ferramentas de compilação:**
+5) **Instale as ferramentas de compilação para ambas arquiteturas:**
 
 ```bash
-# Instalar GCC, Make e ferramentas necessárias
+# Instalar GCC, Make e ferramentas para 64-bit
 pacman -S --needed base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake git
+
+# Instalar também para 32-bit (se precisar compilar x86)
+pacman -S --needed mingw-w64-i686-toolchain mingw-w64-i686-cmake
 ```
 
 Quando perguntar `Enter a selection (default=all):`, apenas pressione Enter para instalar tudo.
@@ -72,11 +75,21 @@ cd nist-nbis
 
 ---
 
-## 📋 PASSO 3: Configurar o Build
+## 🔷 Compilação 64-bit (x64)
 
-Ainda no terminal `MSYS2 MINGW64`:
+### ⚠️ IMPORTANTE: Use o terminal MSYS2 MINGW64
+
+Verifique se está no terminal correto:
+```bash
+gcc -dumpmachine
+# Deve retornar: x86_64-w64-mingw32
+```
+
+### PASSO 3: Configurar o Build (x64)
 
 ```bash
+cd /c/projetos/nist-nbis
+
 # Criar pasta onde o NBIS será instalado
 mkdir -p /c/nbis
 
@@ -84,14 +97,7 @@ mkdir -p /c/nbis
 ./setup.sh /c/nbis --MSYS --64
 ```
 
-**O que esse comando faz:**
-- `/c/nbis` = Pasta onde será instalado (equivale a C:\nbis no Windows)
-- `--MSYS` = Indica que estamos usando MSYS/MinGW
-- `--64` = Compilar para 64 bits
-
 ### 🔧 3.1 Corrigir TODOS os CMakeLists.txt
-
-Ainda no terminal `MSYS2 MINGW64`, na pasta `nist-nbis` (raiz do repositório clonado):
 
 ```bash
 find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION 2\.[0-9\.]*)/cmake_minimum_required(VERSION 3.5)/g' {} \;
@@ -103,33 +109,14 @@ E depois:
 find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/CMAKE_MINIMUM_REQUIRED\s*(VERSION\s*[0-9]\.[0-9][0-9]*\.*[0-9]*)/cmake_minimum_required(VERSION 3.5)/gI' {} \;
 ```
 
-### 🔧 3.2 Corrigir possível problema de variáveis globais duplicadas
-
-Abra o seguinte arquivo com nano:
+### 🔧 3.2 Corrigir problema de variáveis globais duplicadas
 
 ```bash
-nano /c/projetos/nist-nbis/rules.mak
+# Adicionar -fcommon ao CFLAGS
+sed -i 's/CFLAGS = /CFLAGS = -fcommon /' /c/projetos/nist-nbis/rules.mak
 ```
 
-Procure a linha que define `CFLAGS` (provavelmente algo como):
-
-```bash
-CFLAGS = -O2 -w -ansi ... ... ...
-```
-
-Adicione `-fcommon` no final:
-
-```bash
-CFLAGS = -O2 -w -ansi ... ... ... -fcommon
-```
-
-Para salvar no nano: `Ctrl+O` → `Enter` → `Ctrl+X`
-
----
-
-## 📋 PASSO 4: Compilar o NBIS
-
-Ainda no terminal `MSYS2 MINGW64`:
+### PASSO 4: Compilar o NBIS (x64)
 
 ```bash
 # Gerar arquivos de configuração
@@ -139,11 +126,7 @@ make config
 make it
 ```
 
----
-
-## 📋 PASSO 5: Instalar o NBIS
-
-Ainda no terminal `MSYS2 MINGW64`:
+### PASSO 5: Instalar o NBIS (x64)
 
 ```bash
 # Instalar os binários e bibliotecas
@@ -156,18 +139,15 @@ Após este comando, você terá em `C:\nbis`:
 - `lib/` → Biblioteca estática (libnbis.a)
 - `include/` → Headers (.h)
 
----
+### PASSO 6: Corrigir a Biblioteca libnbis.a (x64)
 
-## 📋 PASSO 6: Corrigir a Biblioteca libnbis.a
-
-A biblioteca `libnbis.a` gerada contém arquivos `.a` aninhados (bibliotecas dentro de bibliotecas), o que causa problemas no linking. Precisamos extrair todos os objetos `.o` e recriar a biblioteca corretamente.
+A biblioteca `libnbis.a` gerada contém arquivos `.a` aninhados que precisam ser corrigidos:
 
 ```bash
 cd /c/nbis/lib
 
 # Criar pasta de trabalho
-mkdir rebuild
-cd rebuild
+mkdir rebuild && cd rebuild
 
 # Extrair as bibliotecas .a de dentro da libnbis.a
 ar -x ../libnbis.a
@@ -182,7 +162,6 @@ for lib in *.a; do
     mkdir -p "temp_$libname"
     cd "temp_$libname"
     ar -x "../$lib"
-    # Renomear cada .o com prefixo da biblioteca
     for obj in *.o 2>/dev/null; do
         [ -e "$obj" ] && mv "$obj" "../all_objs/${libname}_${obj}"
     done
@@ -204,19 +183,139 @@ cd ..
 rm -rf rebuild
 ```
 
----
-
-## 📋 PASSO 7: Testar se Funcionou
+### PASSO 7: Testar se Funcionou (x64)
 
 ```bash
-# Testar o executável cwsq
 /c/nbis/bin/cwsq
-
-# Deve mostrar algo como:
-# Usage: cwsq <r_bitrate> <output_ext> <image_file> [-r[awfile] w,h,d,[ppi]] [-o[utfile] outfile]
+# Deve mostrar: Usage: cwsq <r_bitrate> <output_ext> <image_file> [-r[awfile] w,h,d,[ppi]] [-o[utfile] outfile]
 ```
 
 Se aparecer a mensagem de uso, o NBIS foi compilado com sucesso! 🎉
+
+---
+
+## 🔶 Compilação 32-bit (x86)
+
+### ⚠️ IMPORTANTE: Use o terminal MSYS2 MINGW32
+
+Para compilar a versão 32-bit, você **DEVE** usar o terminal MINGW32 (não MINGW64):
+
+1) **Abra o terminal correto:**
+   - Menu Iniciar → MSYS2 → MSYS2 MINGW32
+   - ⚠️ Use especificamente o "MINGW32", não o "MINGW64"!
+
+2) **Verifique se está no terminal correto:**
+```bash
+gcc -dumpmachine
+# Deve retornar: i686-w64-mingw32
+```
+
+### PASSO 3: Configurar o Build (x86)
+
+```bash
+cd /c/projetos/nist-nbis
+
+# Criar pasta onde o NBIS será instalado (use pasta diferente da x64)
+mkdir -p /c/nbis32
+
+# Configurar o build para Windows 32-bit
+./setup.sh /c/nbis32 --MSYS --32
+```
+
+### 🔧 3.1 Corrigir TODOS os CMakeLists.txt
+
+```bash
+find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION 2\.[0-9\.]*)/cmake_minimum_required(VERSION 3.5)/g' {} \;
+```
+
+E depois:
+
+```bash
+find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/CMAKE_MINIMUM_REQUIRED\s*(VERSION\s*[0-9]\.[0-9][0-9]*\.*[0-9]*)/cmake_minimum_required(VERSION 3.5)/gI' {} \;
+```
+
+### 🔧 3.2 Corrigir problema de variáveis globais duplicadas
+
+```bash
+# Adicionar -fcommon ao CFLAGS
+sed -i 's/CFLAGS = /CFLAGS = -fcommon /' /c/projetos/nist-nbis/rules.mak
+```
+
+### PASSO 4: Compilar o NBIS (x86)
+
+```bash
+# Gerar arquivos de configuração
+make config
+
+# Compilar (pode demorar alguns minutos)
+make it
+```
+
+### PASSO 5: Instalar o NBIS (x86)
+
+```bash
+# Instalar os binários e bibliotecas
+make install LIBNBIS=yes
+```
+
+Após este comando, você terá em `C:\nbis32`:
+
+- `bin/` → Executáveis 32-bit (cwsq.exe, dwsq.exe, etc.)
+- `lib/` → Biblioteca estática 32-bit (libnbis.a)
+- `include/` → Headers (.h)
+
+### PASSO 6: Corrigir a Biblioteca libnbis.a (x86)
+
+A biblioteca `libnbis.a` gerada contém arquivos `.a` aninhados que precisam ser corrigidos:
+
+```bash
+cd /c/nbis32/lib
+
+# Criar pasta de trabalho
+mkdir rebuild && cd rebuild
+
+# Extrair as bibliotecas .a de dentro da libnbis.a
+ar -x ../libnbis.a
+
+# Criar pasta para todos os objetos
+mkdir all_objs
+
+# Extrair objetos de cada .a com prefixo único para evitar conflitos
+for lib in *.a; do
+    libname=$(basename "$lib" .a)
+    echo "Processando: $lib"
+    mkdir -p "temp_$libname"
+    cd "temp_$libname"
+    ar -x "../$lib"
+    for obj in *.o 2>/dev/null; do
+        [ -e "$obj" ] && mv "$obj" "../all_objs/${libname}_${obj}"
+    done
+    cd ..
+    rm -rf "temp_$libname"
+done
+
+# Criar nova biblioteca com todos os objetos
+ar rcs libnbis_fixed.a all_objs/*.o
+
+# Criar índice de símbolos
+ranlib libnbis_fixed.a
+
+# Substituir a biblioteca original
+cp libnbis_fixed.a ../libnbis.a
+
+# Limpar
+cd ..
+rm -rf rebuild
+```
+
+### PASSO 7: Testar se Funcionou (x86)
+
+```bash
+/c/nbis32/bin/cwsq
+# Deve mostrar: Usage: cwsq <r_bitrate> <output_ext> <image_file> [-r[awfile] w,h,d,[ppi]] [-o[utfile] outfile]
+```
+
+Se aparecer a mensagem de uso, o NBIS 32-bit foi compilado com sucesso! 🎉
 
 ---
 
@@ -226,7 +325,7 @@ As bibliotecas compiladas são **estáticas** (.a). Para criar uma **DLL** que v
 
 ### 8.1 Criar o arquivo wrapper
 
-Ainda no terminal MSYS2, crie uma pasta para o wrapper:
+No terminal MSYS2 (MINGW64 para x64 ou MINGW32 para x86), crie uma pasta para o wrapper:
 
 ```bash
 mkdir -p /c/projetos/wsq-dll
@@ -289,10 +388,23 @@ EOF
 
 ### 8.2 Compilar a DLL
 
+**Para x64 (no terminal MINGW64):**
+
 ```bash
 gcc -shared -o wsq_wrapper.dll wsq_wrapper.c \
     -I/c/nbis/include \
     -L/c/nbis/lib \
+    -lnbis \
+    -lm \
+    -static-libgcc
+```
+
+**Para x86 (no terminal MINGW32):**
+
+```bash
+gcc -shared -o wsq_wrapper.dll wsq_wrapper.c \
+    -I/c/nbis32/include \
+    -L/c/nbis32/lib \
     -lnbis \
     -lm \
     -static-libgcc

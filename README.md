@@ -183,8 +183,8 @@ for lib in *.a; do
     cd "temp_$libname"
     ar -x "../$lib"
     # Renomear cada .o com prefixo da biblioteca
-    for obj in *.o 2>/dev/null; do
-        [ -e "$obj" ] && mv "$obj" "../all_objs/${libname}_${obj}"
+    for obj in *.o; do
+        mv "$obj" "../all_objs/${libname}_${obj}"
     done
     cd ..
     rm -rf "temp_$libname"
@@ -312,6 +312,86 @@ nm wsq_wrapper.dll | grep wsq
 
 ---
 
+## 📋 PASSO 10: Se quiser também criar uma DLL x86
+
+1) Abra o MINGW32 localizado em `C:\msys64\mingw32.exe`
+2) A partir de agora, todos os comandos deverão ser feitos no terminal do MINGW32 para que a compilação x86 seja realizada
+
+### 10.1: Instalar o toolchain x86
+```
+pacman -S --needed base-devel mingw-w64-i686-toolchain mingw-w64-i686-cmake git
+```
+
+### 10.2: Limpar e recombilar a NBIS
+
+É recomendado que se faça o procedimento de forma limpa, ou seja, clone o repositório novamente e faça o processo do 0 para evitar arquivos buildados anteriormente para x64.
+
+```
+cd /c/projetos/nist-nbis
+
+# Limpar build anterior
+make clean
+
+# Criar pasta separada para 32-bit
+mkdir -p /c/nbis32
+
+# Reconfigurar para 32-bit
+./setup.sh /c/nbis32 --MSYS --32
+
+# Aplicar correção do -fcommon no rules.mak
+nano /c/projetos/nist-nbis/rules.mak
+# Adicionar -fcommon no CFLAGS
+
+# Compilar
+make config
+make it
+
+# Instalar
+make install LIBNBIS=yes
+```
+
+### 10.3: Corrigir a libnbis.a (32-bit)
+
+```
+cd /c/nbis32/lib
+
+mkdir rebuild && cd rebuild
+
+ar -x ../libnbis.a
+
+mkdir all_objs
+
+for lib in *.a; do libname=$(basename "$lib" .a); echo "Processando: $lib"; mkdir -p "temp_$libname"; cd "temp_$libname"; ar -x "../$lib"; for obj in *.o; do [ -e "$obj" ] && mv "$obj" "../all_objs/${libname}_${obj}"; done; cd ..; rm -rf "temp_$libname"; done
+
+# Criar nova biblioteca
+ar rcs libnbis_fixed.a all_objs/*.o
+
+# Criar índice
+ranlib libnbis_fixed.a
+
+# Substituir original
+cp libnbis_fixed.a ../libnbis.a
+
+# Limpar
+cd ..
+
+rm -rf rebuild
+```
+
+### 10.4: Compilar a DLL 32-bit
+
+```
+cd /c/projetos/wsq-dll
+
+gcc -shared -o wsq_wrapper_x86.dll wsq_wrapper.c \
+    -I/c/nbis32/include \
+    -L/c/nbis32/lib \
+    -lnbis \
+    -lm \
+    -static-libgcc
+```
+
+--- 
 ## 📋 PASSO 9: Usar a DLL no C#
 
 Copie a `wsq_wrapper.dll` para a pasta do seu projeto C# e use este código:

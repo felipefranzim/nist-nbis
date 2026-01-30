@@ -1,0 +1,22 @@
+<Project>
+  <ItemGroup>
+    <!-- DLL x64 -->
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\wsq_nfiq_wrapper.dll">
+      <Link>x64\wsq_nfiq_wrapper.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </NativeLibrary>
+    
+    <!-- DLL x86 -->
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\wsq_nfiq_wrapper.dll">
+      <Link>x86\wsq_nfiq_wrapper.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </NativeLibrary>
+    
+    <Content Include="@(NativeLibrary)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+</Project>

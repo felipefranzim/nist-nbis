@@ -1,0 +1,146 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\operador\\source\\repos\\WSQSharp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\wsqsharp\\wsqnative.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|solutionrelative:wsqsharp\\wsqnative.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\wsqsharp\\nfiqnative.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|solutionrelative:wsqsharp\\nfiqnative.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{46F94121-9146-7738-04AB-CF6591008EFB}|Teste\\Teste.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\teste\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{46F94121-9146-7738-04AB-CF6591008EFB}|Teste\\Teste.csproj|solutionrelative:teste\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\wsqsharp\\wsqsharp.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|solutionrelative:wsqsharp\\wsqsharp.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\wsqsharp\\wsqsharp.targets||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|solutionrelative:wsqsharp\\wsqsharp.targets||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|c:\\users\\operador\\source\\repos\\wsqsharp\\wsqsharp\\bmpparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8980779B-DB98-69A7-EF11-2888B7AE2C77}|WSQSharp\\WSQSharp.csproj|solutionrelative:wsqsharp\\bmpparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 11,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:130:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:132:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:134:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:131:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "WSQSharp.targets",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WSQSharp.targets",
+              "RelativeDocumentMoniker": "WSQSharp\\WSQSharp.targets",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WSQSharp.targets",
+              "RelativeToolTip": "WSQSharp\\WSQSharp.targets",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2026-01-30T21:29:33.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "NfiqNative.cs",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\NfiqNative.cs",
+              "RelativeDocumentMoniker": "WSQSharp\\NfiqNative.cs",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\NfiqNative.cs",
+              "RelativeToolTip": "WSQSharp\\NfiqNative.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAgwBgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-30T21:26:42.185Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "WSQSharp.targets",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WSQSharp.targets",
+              "RelativeDocumentMoniker": "WSQSharp\\WSQSharp.targets",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WSQSharp.targets",
+              "RelativeToolTip": "WSQSharp\\WSQSharp.targets",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2026-01-30T21:03:57.9Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\Teste\\Program.cs",
+              "RelativeDocumentMoniker": "Teste\\Program.cs",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\Teste\\Program.cs",
+              "RelativeToolTip": "Teste\\Program.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-30T15:33:00.719Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "BmpParser.cs",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\BmpParser.cs",
+              "RelativeDocumentMoniker": "WSQSharp\\BmpParser.cs",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\BmpParser.cs",
+              "RelativeToolTip": "WSQSharp\\BmpParser.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAUwCkAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-30T15:27:25.101Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "WsqNative.cs",
+              "DocumentMoniker": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WsqNative.cs",
+              "RelativeDocumentMoniker": "WSQSharp\\WsqNative.cs",
+              "ToolTip": "C:\\Users\\operador\\source\\repos\\WSQSharp\\WSQSharp\\WsqNative.cs",
+              "RelativeToolTip": "WSQSharp\\WsqNative.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAAQwCkAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-30T15:24:14.373Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

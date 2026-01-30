@@ -1,0 +1,14 @@
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\WSQSharp.deps.json
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\WSQSharp.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\WSQSharp.pdb
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.csproj.AssemblyReference.cache
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.AssemblyInfoInputs.cache
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.AssemblyInfo.cs
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.csproj.CoreCompileInputs.cache
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\obj\x86\Debug\netstandard2.0\WSQSharp.pdb
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\x64\wsq_wrapper.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\x86\wsq_wrapper.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\x64\wsq_nfiq_wrapper.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\x86\Debug\netstandard2.0\x86\wsq_nfiq_wrapper.dll

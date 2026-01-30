@@ -1,0 +1,5 @@
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\Release\netstandard2.0\publish\x64\wsq_wrapper.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\Release\netstandard2.0\publish\x86\wsq_wrapper.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\Release\netstandard2.0\publish\WSQSharp.dll
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\Release\netstandard2.0\publish\WSQSharp.deps.json
+C:\Users\operador\source\repos\WSQSharp\WSQSharp\bin\Release\netstandard2.0\publish\WSQSharp.pdb

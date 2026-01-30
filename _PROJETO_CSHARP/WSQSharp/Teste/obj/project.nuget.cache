@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "oza2u+lVBPc=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\operador\\source\\repos\\WSQSharp\\Teste\\Teste.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\operador\\.nuget\\packages\\microsoft.win32.systemevents\\10.0.2\\microsoft.win32.systemevents.10.0.2.nupkg.sha512",
+    "C:\\Users\\operador\\.nuget\\packages\\system.drawing.common\\10.0.2\\system.drawing.common.10.0.2.nupkg.sha512",
+    "C:\\Users\\operador\\.nuget\\packages\\wsqsharp\\1.1.4\\wsqsharp.1.1.4.nupkg.sha512"
+  ],
+  "logs": []
+}

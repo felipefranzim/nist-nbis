@@ -361,6 +361,89 @@ EXPORT int nfiq_from_raw_data(
     
     return ret;
 }
+
+/* Helper para extrair info do BMP */
+static int parse_bmp_grayscale(
+    const unsigned char* bmpData,
+    int bmpLen,
+    unsigned char** out_pixels,
+    int* out_w,
+    int* out_h,
+    int* out_ppi)
+{
+    if (!bmpData) return -1;
+    if (bmpLen < 54) return -2;
+
+    // BMP Header
+    if (bmpData[0] != 0x42 || bmpData[1] != 0x4D) // 'B','M'
+        return -3;
+
+    int dataOffset = bmpData[10] | (bmpData[11] << 8) | (bmpData[12] << 16) | (bmpData[13] << 24);
+    int w = bmpData[18] | (bmpData[19] << 8) | (bmpData[20] << 16) | (bmpData[21] << 24);
+    int h = bmpData[22] | (bmpData[23] << 8) | (bmpData[24] << 16) | (bmpData[25] << 24);
+    short bitsPerPixel = bmpData[28] | (bmpData[29] << 8);
+    int xPelsPerMeter = bmpData[38] | (bmpData[39] << 8) | (bmpData[40] << 16) | (bmpData[41] << 24);
+    int ppi = (int)(xPelsPerMeter / 39.3701);
+    if (ppi < 100) ppi = 500;
+
+    if (bitsPerPixel != 8 && bitsPerPixel != 24 && bitsPerPixel != 32)
+        return -4; // só aceita 8,24,32bpp
+
+    int bytesPerPixel = bitsPerPixel / 8;
+    int stride = ((w * bytesPerPixel) + 3) & ~3;
+
+    // Alocar saída
+    unsigned char* pixels = (unsigned char*)malloc(w * h);
+    if (!pixels) return -5;
+
+    for (int y = 0; y < h; ++y) {
+        int srcY = h - 1 - y; // BMP bottom-up
+        int srcOffset = dataOffset + (srcY * stride);
+
+        for (int x = 0; x < w; ++x) {
+            int pixelOffset = srcOffset + (x * bytesPerPixel);
+            unsigned char gray;
+            if (bitsPerPixel == 8) {
+                gray = bmpData[pixelOffset];
+            } else {
+                unsigned char b = bmpData[pixelOffset];
+                unsigned char g = bmpData[pixelOffset+1];
+                unsigned char r = bmpData[pixelOffset+2];
+                gray = (unsigned char)(0.299*r + 0.587*g + 0.114*b);
+            }
+            pixels[y * w + x] = gray;
+        }
+    }
+    *out_pixels = pixels;
+    *out_w = w;
+    *out_h = h;
+    *out_ppi = ppi;
+    return 0;
+}
+
+/* Wrapper que aceita BMP em memória */
+EXPORT int nfiq_from_bmp_data(
+    int* nfiq_score,
+    const unsigned char* bmpData,
+    int bmpLen)
+{
+    unsigned char* raw_pixels = NULL;
+    int w = 0, h = 0, ppi = 500;
+    int ret = parse_bmp_grayscale(bmpData, bmpLen, &raw_pixels, &w, &h, &ppi);
+    if (ret != 0) {
+        if (raw_pixels) free(raw_pixels);
+        return ret;
+    }
+
+    int score;
+    float conf;
+    int optflag = 0;
+    ret = comp_nfiq(&score, &conf, raw_pixels, w, h, 8, ppi, &optflag);
+
+    if (raw_pixels) free(raw_pixels);
+    *nfiq_score = score;
+    return ret;
+}
 EOF
 ```
 

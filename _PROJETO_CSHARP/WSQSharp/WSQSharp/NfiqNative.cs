@@ -74,6 +74,12 @@ namespace WsqSharp
             out int nfiq_score,
             byte[] wsq_data,
             int wsq_len);
+
+        [DllImport("wsq_nfiq_wrapper", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int nfiq_from_bmp_data(
+            out int nfiq_score,
+            byte[] bmpData,
+            int bmpLen);
     }
 
     public static class NfiqHelper

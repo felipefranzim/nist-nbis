@@ -1,31 +1,36 @@
 # 🔧 Guia Completo: Compilar NBIS no Windows
 
-Pré-requisitos
-Você vai precisar instalar 3 ferramentas antes de começar:
+Guia para compilar a biblioteca NIST NBIS no Windows e criar uma DLL para uso com C# .NET.
 
+## 📋 Pré-requisitos
 
-| Ferramenta |	O que é |	Download |
-|----------|:-------------:|------:|
-| MSYS2 |	Ambiente Unix-like para Windows |	https://www.msys2.org/ |
-| CMake	| Ferramenta de build |	https://cmake.org/download/ |
-| Git	| Controle de versão |	https://git-scm.com/download/win |
+Você vai precisar instalar estas ferramentas antes de começar:
+
+| Ferramenta | O que é | Download |
+|------------|---------|----------|
+| MSYS2 | Ambiente Unix-like para Windows | https://www.msys2.org/ |
+| CMake | Ferramenta de build | https://cmake.org/download/ |
+| Git | Controle de versão | https://git-scm.com/download/win |
+
+---
 
 ## 📋 PASSO 1: Instalar o MSYS2
 
 O MSYS2 é um ambiente que simula Linux no Windows, necessário porque o NBIS usa Makefiles Unix.
 
 1) **Baixe o instalador em:** https://www.msys2.org/
-  - Clique no link msys2-x86_64-xxxxxxxx.exe
+   - Clique no link msys2-x86_64-xxxxxxxx.exe
 
 2) **Execute o instalador**
-  - Instale em C:\msys64 (caminho padrão)
-  - **Importante:** Não use caminhos com espaços!
+   - Instale em C:\msys64 (caminho padrão)
+   - **Importante:** Não use caminhos com espaços!
 
 3) **Após instalar, abra o terminal MSYS2**
-  - Vá em: Menu Iniciar → MSYS2 → MSYS2 MINGW64
-  - ⚠️ Use especificamente o "MINGW64", não o "MSYS2 MSYS"!
+   - Vá em: Menu Iniciar → MSYS2 → MSYS2 MINGW64
+   - ⚠️ Use especificamente o "MINGW64", não o "MSYS2 MSYS"!
 
 4) **Atualize o MSYS2 (execute estes comandos no terminal que abriu):**
+
 ```bash
 # Atualizar o sistema (pode pedir para fechar e reabrir)
 pacman -Syu
@@ -39,12 +44,15 @@ pacman -Su
 ```
 
 5) **Instale as ferramentas de compilação:**
+
 ```bash
 # Instalar GCC, Make e ferramentas necessárias
 pacman -S --needed base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake git
 ```
 
 Quando perguntar `Enter a selection (default=all):`, apenas pressione Enter para instalar tudo.
+
+---
 
 ## 📋 PASSO 2: Baixar o Código Fonte do NBIS
 
@@ -62,6 +70,8 @@ git clone https://github.com/felipefranzim/nist-nbis.git
 cd nist-nbis
 ```
 
+---
+
 ## 📋 PASSO 3: Configurar o Build
 
 Ainda no terminal `MSYS2 MINGW64`:
@@ -75,11 +85,11 @@ mkdir -p /c/nbis
 ```
 
 **O que esse comando faz:**
-- /c/nbis = Pasta onde será instalado (equivale a C:\nbis no Windows)
-- --MSYS = Indica que estamos usando MSYS/MinGW
-- --64 = Compilar para 64 bits
+- `/c/nbis` = Pasta onde será instalado (equivale a C:\nbis no Windows)
+- `--MSYS` = Indica que estamos usando MSYS/MinGW
+- `--64` = Compilar para 64 bits
 
-### 🔧 Corrigir TODOS os CMakeLists.txt
+### 🔧 3.1 Corrigir TODOS os CMakeLists.txt
 
 Ainda no terminal `MSYS2 MINGW64`, na pasta `nist-nbis` (raiz do repositório clonado):
 
@@ -93,9 +103,10 @@ E depois:
 find /c/projetos/nist-nbis -name "CMakeLists.txt" -exec sed -i 's/CMAKE_MINIMUM_REQUIRED\s*(VERSION\s*[0-9]\.[0-9][0-9]*\.*[0-9]*)/cmake_minimum_required(VERSION 3.5)/gI' {} \;
 ```
 
-### 🔧 Corrigir possível problema de variáveis globais duplicadas
+### 🔧 3.2 Corrigir possível problema de variáveis globais duplicadas
 
 Abra o seguinte arquivo com nano:
+
 ```bash
 nano /c/projetos/nist-nbis/rules.mak
 ```
@@ -114,6 +125,8 @@ CFLAGS = -O2 -w -ansi ... ... ... -fcommon
 
 Para salvar no nano: `Ctrl+O` → `Enter` → `Ctrl+X`
 
+---
+
 ## 📋 PASSO 4: Compilar o NBIS
 
 Ainda no terminal `MSYS2 MINGW64`:
@@ -125,6 +138,8 @@ make config
 # Compilar (pode demorar alguns minutos)
 make it
 ```
+
+---
 
 ## 📋 PASSO 5: Instalar o NBIS
 
@@ -138,10 +153,60 @@ make install LIBNBIS=yes
 Após este comando, você terá em `C:\nbis`:
 
 - `bin/` → Executáveis (cwsq.exe, dwsq.exe, etc.)
-- `lib/` → Bibliotecas estáticas (.a)
+- `lib/` → Biblioteca estática (libnbis.a)
 - `include/` → Headers (.h)
 
-## 📋 PASSO 6: Testar se Funcionou
+---
+
+## 📋 PASSO 6: Corrigir a Biblioteca libnbis.a
+
+A biblioteca `libnbis.a` gerada contém arquivos `.a` aninhados (bibliotecas dentro de bibliotecas), o que causa problemas no linking. Precisamos extrair todos os objetos `.o` e recriar a biblioteca corretamente.
+
+```bash
+cd /c/nbis/lib
+
+# Criar pasta de trabalho
+mkdir rebuild
+cd rebuild
+
+# Extrair as bibliotecas .a de dentro da libnbis.a
+ar -x ../libnbis.a
+
+# Criar pasta para todos os objetos
+mkdir all_objs
+
+# Extrair objetos de cada .a com prefixo único para evitar conflitos
+for lib in *.a; do
+    libname=$(basename "$lib" .a)
+    echo "Processando: $lib"
+    mkdir -p "temp_$libname"
+    cd "temp_$libname"
+    ar -x "../$lib"
+    # Renomear cada .o com prefixo da biblioteca
+    for obj in *.o 2>/dev/null; do
+        [ -e "$obj" ] && mv "$obj" "../all_objs/${libname}_${obj}"
+    done
+    cd ..
+    rm -rf "temp_$libname"
+done
+
+# Criar nova biblioteca com todos os objetos
+ar rcs libnbis_fixed.a all_objs/*.o
+
+# Criar índice de símbolos
+ranlib libnbis_fixed.a
+
+# Substituir a biblioteca original
+cp libnbis_fixed.a ../libnbis.a
+
+# Limpar
+cd ..
+rm -rf rebuild
+```
+
+---
+
+## 📋 PASSO 7: Testar se Funcionou
 
 ```bash
 # Testar o executável cwsq
@@ -153,11 +218,13 @@ Após este comando, você terá em `C:\nbis`:
 
 Se aparecer a mensagem de uso, o NBIS foi compilado com sucesso! 🎉
 
-## 📋 PASSO 7: Criar a DLL para usar com C#
+---
+
+## 📋 PASSO 8: Criar a DLL para usar com C#
 
 As bibliotecas compiladas são **estáticas** (.a). Para criar uma **DLL** que você pode usar com P/Invoke no C#, siga estes passos:
 
-### 7.1 Criar o arquivo wrapper
+### 8.1 Criar o arquivo wrapper
 
 Ainda no terminal MSYS2, crie uma pasta para o wrapper:
 
@@ -174,6 +241,9 @@ cat > wsq_wrapper.c << 'EOF'
 #include <stdlib.h>
 #include <string.h>
 #include "wsq.h"
+
+/* Variável global requerida pela libnbis */
+int debug = 0;
 
 #ifdef _WIN32
 #define WSQ_EXPORT __declspec(dllexport)
@@ -217,19 +287,32 @@ WSQ_EXPORT void wsq_free(unsigned char *data)
 EOF
 ```
 
-### 7.2 Compilar a DLL
+### 8.2 Compilar a DLL
 
 ```bash
 gcc -shared -o wsq_wrapper.dll wsq_wrapper.c \
     -I/c/nbis/include \
     -L/c/nbis/lib \
-    -lwsq -ljpegl -lfet -lioutil -lutil -lihead -limage \
+    -lnbis \
+    -lm \
     -static-libgcc
 ```
 
 Se tudo der certo, você terá o arquivo `wsq_wrapper.dll` em `C:\projetos\wsq-dll\`.
 
-## 📋 PASSO 8: Usar a DLL no C#
+### 8.3 Verificar a DLL
+
+```bash
+# Verificar se a DLL foi criada
+ls -la wsq_wrapper.dll
+
+# Verificar as funções exportadas
+nm wsq_wrapper.dll | grep wsq
+```
+
+---
+
+## 📋 PASSO 9: Usar a DLL no C#
 
 Copie a `wsq_wrapper.dll` para a pasta do seu projeto C# e use este código:
 
@@ -271,3 +354,121 @@ namespace WsqSharp.Native
     }
 }
 ```
+
+### Exemplo de uso completo em C#:
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+
+public class WsqConverter
+{
+    /// <summary>
+    /// Converte uma imagem raw (grayscale 8-bit) para WSQ
+    /// </summary>
+    /// <param name="rawImageData">Dados da imagem em grayscale 8-bit</param>
+    /// <param name="width">Largura da imagem</param>
+    /// <param name="height">Altura da imagem</param>
+    /// <param name="ppi">Resolução em pixels por polegada (geralmente 500 para impressões digitais)</param>
+    /// <param name="bitrate">Taxa de compressão (0.75 é um bom padrão para impressões digitais)</param>
+    /// <returns>Dados comprimidos em formato WSQ</returns>
+    public static byte[] EncodeToWsq(byte[] rawImageData, int width, int height, int ppi = 500, float bitrate = 0.75f)
+    {
+        IntPtr outputPtr;
+        int outputLen;
+        
+        int result = WsqNative.wsq_encode_wrapper(
+            out outputPtr,
+            out outputLen,
+            bitrate,
+            rawImageData,
+            width,
+            height,
+            8,  // depth = 8 bits
+            ppi,
+            null);
+        
+        if (result != 0)
+            throw new Exception($"Erro ao codificar WSQ: {result}");
+        
+        try
+        {
+            byte[] wsqData = new byte[outputLen];
+            Marshal.Copy(outputPtr, wsqData, 0, outputLen);
+            return wsqData;
+        }
+        finally
+        {
+            WsqNative.wsq_free(outputPtr);
+        }
+    }
+
+    /// <summary>
+    /// Decodifica uma imagem WSQ para raw grayscale
+    /// </summary>
+    public static (byte[] data, int width, int height, int ppi) DecodeFromWsq(byte[] wsqData)
+    {
+        IntPtr outputPtr;
+        int width, height, depth, ppi, lossyFlag;
+        
+        int result = WsqNative.wsq_decode_wrapper(
+            out outputPtr,
+            out width,
+            out height,
+            out depth,
+            out ppi,
+            out lossyFlag,
+            wsqData,
+            wsqData.Length);
+        
+        if (result != 0)
+            throw new Exception($"Erro ao decodificar WSQ: {result}");
+        
+        try
+        {
+            byte[] rawData = new byte[width * height];
+            Marshal.Copy(outputPtr, rawData, 0, rawData.Length);
+            return (rawData, width, height, ppi);
+        }
+        finally
+        {
+            WsqNative.wsq_free(outputPtr);
+        }
+    }
+}
+```
+
+---
+
+## 🔧 Solução de Problemas
+
+### Erro: "archive has no index; run ranlib to add one"
+
+A biblioteca foi criada com estrutura aninhada. Execute o PASSO 6 novamente para corrigir.
+
+### Erro: "undefined reference to `debug'"
+
+Certifique-se de que o arquivo `wsq_wrapper.c` contém a linha:
+```c
+int debug = 0;
+```
+
+### Erro: "cannot find -lwsq" ou similares
+
+O NBIS gera uma única biblioteca `libnbis.a` em vez de bibliotecas separadas. Use `-lnbis` em vez de `-lwsq -ljpegl ...`
+
+### A DLL não carrega no C#
+
+- Certifique-se de que a DLL está na mesma pasta do executável ou no PATH
+- Use a versão 64-bit da DLL com aplicações 64-bit (e vice-versa)
+- Verifique se todas as dependências estão presentes
+
+---
+
+## 📚 Referências
+
+- [NIST NBIS Official](https://www.nist.gov/services-resources/software/nist-biometric-image-software-nbis)
+- [WSQ Specification](https://www.fbi.gov/services/cjis/fingerprints-and-other-biometrics/biometric-specifications)
+- [MSYS2 Documentation](https://www.msys2.org/docs/what-is-msys2/)
+
+---

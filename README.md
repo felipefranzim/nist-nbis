@@ -233,25 +233,29 @@ mkdir -p /c/projetos/wsq-dll
 cd /c/projetos/wsq-dll
 ```
 
-Crie o arquivo `wsq_wrapper.c`:
+Crie o arquivo `wsq_nfiq_wrapper.c`:
 
 ```bash
-cat > wsq_wrapper.c << 'EOF'
+cat > wsq_nfiq_wrapper.c << 'EOF'
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "wsq.h"
+#include "nfiq.h"
 
-/* Variável global requerida pela libnbis */
+/* Variáveis globais requeridas pela libnbis */
 int debug = 0;
+int verbose = 0;
 
 #ifdef _WIN32
-#define WSQ_EXPORT __declspec(dllexport)
+#define EXPORT __declspec(dllexport)
 #else
-#define WSQ_EXPORT
+#define EXPORT
 #endif
 
-WSQ_EXPORT int wsq_encode_wrapper(
+/* ========== WSQ Functions ========== */
+
+EXPORT int wsq_encode_wrapper(
     unsigned char **odata,
     int *olen,
     const float r_bitrate,
@@ -265,7 +269,7 @@ WSQ_EXPORT int wsq_encode_wrapper(
     return wsq_encode_mem(odata, olen, r_bitrate, idata, w, h, d, ppi, comment_text);
 }
 
-WSQ_EXPORT int wsq_decode_wrapper(
+EXPORT int wsq_decode_wrapper(
     unsigned char **odata,
     int *ow,
     int *oh,
@@ -278,19 +282,139 @@ WSQ_EXPORT int wsq_decode_wrapper(
     return wsq_decode_mem(odata, ow, oh, od, oppi, lossyflag, idata, ilen);
 }
 
-WSQ_EXPORT void wsq_free(unsigned char *data)
+EXPORT void wsq_free(unsigned char *data)
 {
     if (data != NULL) {
         free(data);
     }
 }
+
+/* ========== NFIQ Functions ========== */
+
+EXPORT int nfiq_from_wsq_data(
+    int *nfiq_score,
+    unsigned char *wsq_data,
+    const int wsq_len)
+{
+    unsigned char *raw_data = NULL;
+    int w, h, d, ppi, lossy;
+    int ret;
+    int score;
+    float conf;
+    int optflag;  /* Parâmetro adicional requerido por comp_nfiq */
+    
+    if (wsq_data == NULL || nfiq_score == NULL) {
+        return -1;
+    }
+    
+    /* Decodificar WSQ */
+    ret = wsq_decode_mem(&raw_data, &w, &h, &d, &ppi, &lossy, wsq_data, wsq_len);
+    if (ret != 0) {
+        return -2;
+    }
+    
+    /* Inicializar valores */
+    score = 5;
+    conf = 0.0f;
+    optflag = 0;
+    
+    /* Calcular NFIQ - assinatura correta:
+       comp_nfiq(int *nfiq, float *conf, unsigned char *idata,
+                 const int w, const int h, const int d, const int ppi, int *optflag) */
+    ret = comp_nfiq(&score, &conf, raw_data, w, h, d, ppi, &optflag);
+    
+    /* Copiar resultado */
+    *nfiq_score = score;
+    
+    /* Liberar memória */
+    free(raw_data);
+    
+    return ret;
+}
+
+EXPORT int nfiq_from_raw_data(
+    int *nfiq_score,
+    unsigned char *raw_data,
+    const int w,
+    const int h,
+    const int ppi)
+{
+    int ret;
+    int score;
+    float conf;
+    int optflag;
+    
+    if (raw_data == NULL || nfiq_score == NULL) {
+        return -1;
+    }
+    
+    /* Inicializar valores */
+    score = 5;
+    conf = 0.0f;
+    optflag = 0;
+    
+    /* Calcular NFIQ */
+    ret = comp_nfiq(&score, &conf, raw_data, w, h, 8, ppi, &optflag);
+    
+    /* Copiar resultado */
+    *nfiq_score = score;
+    
+    return ret;
+}
 EOF
+```
+
+### 8.2 Criar um header de compatibilidade sys/times.h
+
+Pode ser que ao tentar compilar a DLL depois, ocorra erro no header sys/times.h, que é específico de Unix/Linux e não existe no MinGW Windows. Vamos contornar isso.
+
+```
+cd /c/nbis/include
+
+# Criar a pasta sys se não existir
+mkdir -p sys
+
+# Criar um times.h vazio/stub
+cat > sys/times.h << 'EOF'
+/* Stub for Windows compatibility */
+#ifndef _SYS_TIMES_H
+#define _SYS_TIMES_H
+
+#include <time.h>
+
+struct tms {
+    clock_t tms_utime;
+    clock_t tms_stime;
+    clock_t tms_cutime;
+    clock_t tms_cstime;
+};
+
+static inline clock_t times(struct tms *buf) {
+    if (buf) {
+        buf->tms_utime = clock();
+        buf->tms_stime = 0;
+        buf->tms_cutime = 0;
+        buf->tms_cstime = 0;
+    }
+    return clock();
+}
+
+#endif /* _SYS_TIMES_H */
+EOF
+```
+
+Se precisar compilar a dll x86 posteriormente, copie esse header para a pasta em que estiver trabalhando na versão x86.
+
+```
+cd /c/nbis32/include
+mkdir -p sys
+cp /c/nbis/include/sys/times.h sys/
 ```
 
 ### 8.2 Compilar a DLL
 
 ```bash
-gcc -shared -o wsq_wrapper.dll wsq_wrapper.c \
+gcc -shared -o wsq_nfiq_wrapper.dll wsq_nfiq_wrapper.c \
     -I/c/nbis/include \
     -L/c/nbis/lib \
     -lnbis \
@@ -298,31 +422,32 @@ gcc -shared -o wsq_wrapper.dll wsq_wrapper.c \
     -static-libgcc
 ```
 
-Se tudo der certo, você terá o arquivo `wsq_wrapper.dll` em `C:\projetos\wsq-dll\`.
+Se tudo der certo, você terá o arquivo `wsq_nfiq_wrapper.dll` em `C:\projetos\wsq-dll\`.
 
 ### 8.3 Verificar a DLL
 
 ```bash
 # Verificar se a DLL foi criada
-ls -la wsq_wrapper.dll
+ls -la wsq_nfiq_wrapper.dll
 
 # Verificar as funções exportadas
-nm wsq_wrapper.dll | grep wsq
+nm wsq_nifq_wrapper.dll | grep wsq
 ```
 
 ---
 
-## 📋 PASSO 10: Se quiser também criar uma DLL x86
+
+## 📋 PASSO 9: Se quiser também criar uma DLL x86
 
 1) Abra o MINGW32 localizado em `C:\msys64\mingw32.exe`
 2) A partir de agora, todos os comandos deverão ser feitos no terminal do MINGW32 para que a compilação x86 seja realizada
 
-### 10.1: Instalar o toolchain x86
+### 9.1: Instalar o toolchain x86
 ```
 pacman -S --needed base-devel mingw-w64-i686-toolchain mingw-w64-i686-cmake git
 ```
 
-### 10.2: Limpar e recombilar a NBIS
+### 9.2: Limpar e recombilar a NBIS
 
 É recomendado que se faça o procedimento de forma limpa, ou seja, clone o repositório novamente e faça o processo do 0 para evitar arquivos buildados anteriormente para x64.
 
@@ -350,7 +475,7 @@ make it
 make install LIBNBIS=yes
 ```
 
-### 10.3: Corrigir a libnbis.a (32-bit)
+### 9.3: Corrigir a libnbis.a (32-bit)
 
 ```
 cd /c/nbis32/lib
@@ -378,7 +503,7 @@ cd ..
 rm -rf rebuild
 ```
 
-### 10.4: Compilar a DLL 32-bit
+### 9.4: Compilar a DLL 32-bit
 
 ```
 cd /c/projetos/wsq-dll
@@ -392,9 +517,9 @@ gcc -shared -o wsq_wrapper_x86.dll wsq_wrapper.c \
 ```
 
 --- 
-## 📋 PASSO 9: Usar a DLL no C#
+## 📋 PASSO 10: Usar a DLL no C#
 
-Copie a `wsq_wrapper.dll` para a pasta do seu projeto C# e use este código:
+Copie a `wsq_nfiq_wrapper.dll` para a pasta do seu projeto C# e use este código:
 
 ```csharp
 using System;

@@ -10,7 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="10.0.2" />
-    <PackageReference Include="WSQSharp" Version="1.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WSQSharp\WSQSharp.csproj" />
   </ItemGroup>
 
 </Project>

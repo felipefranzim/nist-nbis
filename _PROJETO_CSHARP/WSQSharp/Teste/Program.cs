@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using WsqSharp;
+using WSQSharp;
 
 void ConvertPngToBmp(string pngPath, string bmpPath)
 {
@@ -13,20 +14,35 @@ void ConvertPngToBmp(string pngPath, string bmpPath)
     }
 }
 
- ConvertPngToBmp(@"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.png", @"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.bmp");
+ //ConvertPngToBmp(@"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.png", @"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.bmp");
 
 
-var wsq = WsqConverter.ConvertBmpToWsq(File.ReadAllBytes(@"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.bmp"));
-File.WriteAllBytes(@"fingerprint.wsq", wsq);
+//var wsq = WsqConverter.ConvertBmpToWsq(File.ReadAllBytes(@"C:\\Users\\operador\\Downloads\\ENC_ Impressões digitais neonatal\\nomatch2.bmp"));
+//File.WriteAllBytes(@"fingerprint.wsq", wsq);
 
-var teste = File.ReadAllBytes("C:\\Users\\operador\\Downloads\\OneDrive_2025-10-06\\Digitais NeoNatal\\medio esquerdo.wsq");
+var wsq1 = File.ReadAllBytes("dedo_n10_nfiq3.wsq");
 int score;
-int result = NfiqNative.nfiq_from_wsq_data(out score, teste, teste.Length);
+int result = NfiqNative.nfiq_from_wsq_data(out score, wsq1, wsq1.Length);
 Console.WriteLine($"Result: {result}, Score: {score}");
 
-var nfiq = NfiqHelper.GetQualityFromWsq(wsq);
+var bmp = File.ReadAllBytes("meu_dedo10.bmp");
 
-Console.WriteLine($"Qualidade NFIQ: {nfiq}");
+int score2;
+int result2 = NfiqNative.nfiq_from_bmp_data(out score2, bmp, bmp.Length);
+Console.WriteLine($"Result: {result2}, Score: {score2}");
+
+Console.WriteLine("Teste de match:");
+
+var wsq2 = File.ReadAllBytes("dedo_n9_nfiq1.wsq");
+var resultMatch1 = FingerprintMatcher.MatchWsq(wsq1, wsq2);
+Console.WriteLine($"Match dedo_n10_nfiq3.wsq com dedo_n9_nfiq1.wsq: {resultMatch1}");
+
+var resultMatch2 = FingerprintMatcher.VerifyWsq(wsq1, wsq1, threshold: 40);
+Console.WriteLine($"Verify dedo_n10_nfiq3.wsq com dedo_n9_nfiq1.wsq: {resultMatch2}");
+
+//var nfiq = NfiqHelper.GetQualityFromWsq(wsq);
+
+//Console.WriteLine($"Qualidade NFIQ: {nfiq}");
 Console.ReadKey();
 
 // WSQ para BMP (arquivos)

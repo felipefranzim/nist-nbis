@@ -233,25 +233,46 @@ mkdir -p /c/projetos/wsq-dll
 cd /c/projetos/wsq-dll
 ```
 
-Crie o arquivo `wsq_nfiq_wrapper.c`:
+Crie o arquivo `nbis_wrapper.c`:
 
 ```bash
-cat > wsq_nfiq_wrapper.c << 'EOF'
+cat > nbis_wrapper.c << 'EOF'
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "wsq.h"
 #include "nfiq.h"
+#include "bozorth.h"
+#include "lfs.h"
 
 /* Variáveis globais requeridas pela libnbis */
 int debug = 0;
 int verbose = 0;
+
+/* Variáveis globais requeridas pelo Bozorth3 */
+int m1_xyt = 0;
+int max_minutiae = DEFAULT_BOZORTH_MINUTIAE;
+int min_computable_minutiae = MIN_COMPUTABLE_BOZORTH_MINUTIAE;
+int verbose_main = 0;
+int verbose_load = 0;
+int verbose_bozorth = 0;
+int verbose_threshold = 0;
+FILE *errorfp = NULL;
 
 #ifdef _WIN32
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT
 #endif
+
+/* Inicialização - chamar uma vez antes de usar as funções */
+static int initialized = 0;
+static void ensure_initialized(void) {
+    if (!initialized) {
+        errorfp = stderr;
+        initialized = 1;
+    }
+}
 
 /* ========== WSQ Functions ========== */
 
@@ -444,6 +465,263 @@ EXPORT int nfiq_from_bmp_data(
     *nfiq_score = score;
     return ret;
 }
+
+/* ========== MINUTIAE EXTRACTION (mindtct) ========== */
+
+/* Converte PPI para pixels per mm */
+static double ppi_to_ppmm(int ppi)
+{
+    return (double)ppi / 25.4;
+}
+
+/* Extrai minúcias de uma imagem raw grayscale */
+EXPORT int extract_minutiae(
+    unsigned char *raw_data,
+    const int w,
+    const int h,
+    const int ppi,
+    int *minutiae_count,
+    int *x_coords,
+    int *y_coords,
+    int *thetas,
+    int *qualities,
+    const int max_minutiae)
+{
+    int ret;
+    MINUTIAE *minutiae = NULL;
+    int *direction_map = NULL;
+    int *low_contrast_map = NULL;
+    int *low_flow_map = NULL;
+    int *high_curve_map = NULL;
+    int *quality_map = NULL;
+    int map_w, map_h;
+    unsigned char *binarized_image = NULL;
+    int bw, bh, bd;
+    double ppmm;
+    int i, ox, oy, ot;
+    int count;
+    
+    if (raw_data == NULL || minutiae_count == NULL) {
+        return -1;
+    }
+    
+    /* Converter PPI para pixels per mm */
+    ppmm = ppi_to_ppmm(ppi);
+    
+    /* Chamar get_minutiae com a assinatura correta (18 parametros) */
+    ret = get_minutiae(&minutiae, &quality_map, &direction_map,
+                       &low_contrast_map, &low_flow_map, &high_curve_map,
+                       &map_w, &map_h,
+                       &binarized_image, &bw, &bh, &bd,
+                       raw_data, w, h, 8, ppmm, &lfsparms_V2);
+    
+    if (ret != 0) {
+        return ret;
+    }
+    
+    /* Copiar minúcias para os arrays de saída */
+    count = (minutiae->num < max_minutiae) ? minutiae->num : max_minutiae;
+    *minutiae_count = count;
+    
+    for (i = 0; i < count; i++) {
+        /* Converter para representação NIST internal (usada pelo bozorth3) */
+        lfs2nist_minutia_XYT(&ox, &oy, &ot, minutiae->list[i], w, h);
+        
+        x_coords[i] = ox;
+        y_coords[i] = oy;
+        thetas[i] = ot;
+        
+        /* Reliability é um double entre 0.0 e 1.0, convertemos para 0-100 */
+        qualities[i] = (int)(minutiae->list[i]->reliability * 100.0);
+    }
+    
+    /* Liberar memória */
+    free_minutiae(minutiae);
+    if (direction_map) free(direction_map);
+    if (low_contrast_map) free(low_contrast_map);
+    if (low_flow_map) free(low_flow_map);
+    if (high_curve_map) free(high_curve_map);
+    if (quality_map) free(quality_map);
+    if (binarized_image) free(binarized_image);
+    
+    return 0;
+}
+
+/* Extrai minúcias de dados WSQ */
+EXPORT int extract_minutiae_from_wsq(
+    unsigned char *wsq_data,
+    const int wsq_len,
+    int *minutiae_count,
+    int *x_coords,
+    int *y_coords,
+    int *thetas,
+    int *qualities,
+    const int max_minutiae)
+{
+    unsigned char *raw_data = NULL;
+    int w, h, d, ppi, lossy;
+    int ret;
+    
+    if (wsq_data == NULL || minutiae_count == NULL) {
+        return -1;
+    }
+    
+    /* Decodificar WSQ */
+    ret = wsq_decode_mem(&raw_data, &w, &h, &d, &ppi, &lossy, wsq_data, wsq_len);
+    if (ret != 0) {
+        return -2;
+    }
+    
+    /* Extrair minúcias */
+    ret = extract_minutiae(raw_data, w, h, ppi,
+                           minutiae_count, x_coords, y_coords, thetas, qualities,
+                           max_minutiae);
+    
+    free(raw_data);
+    return ret;
+}
+
+/* ========== BOZORTH3 MATCHING ========== */
+
+/* 
+ * Compara duas digitais usando arrays de minúcias
+ * Retorna o match score (quanto maior, mais similar)
+ */
+EXPORT int bozorth_match(
+    const int probe_count,
+    const int *probe_x,
+    const int *probe_y,
+    const int *probe_theta,
+    const int gallery_count,
+    const int *gallery_x,
+    const int *gallery_y,
+    const int *gallery_theta)
+{
+    struct xyt_struct probe_xyt;
+    struct xyt_struct gallery_xyt;
+    int i;
+    int match_score;
+    
+    if (probe_count <= 0 || gallery_count <= 0) {
+        return 0;
+    }
+    
+    /* Limitar ao máximo permitido */
+    int p_count = (probe_count > MAX_BOZORTH_MINUTIAE) ? MAX_BOZORTH_MINUTIAE : probe_count;
+    int g_count = (gallery_count > MAX_BOZORTH_MINUTIAE) ? MAX_BOZORTH_MINUTIAE : gallery_count;
+    
+    /* Preencher estrutura probe */
+    probe_xyt.nrows = p_count;
+    for (i = 0; i < p_count; i++) {
+        probe_xyt.xcol[i] = probe_x[i];
+        probe_xyt.ycol[i] = probe_y[i];
+        probe_xyt.thetacol[i] = probe_theta[i];
+    }
+    
+    /* Preencher estrutura gallery */
+    gallery_xyt.nrows = g_count;
+    for (i = 0; i < g_count; i++) {
+        gallery_xyt.xcol[i] = gallery_x[i];
+        gallery_xyt.ycol[i] = gallery_y[i];
+        gallery_xyt.thetacol[i] = gallery_theta[i];
+    }
+    
+    /* Executar matching */
+    match_score = bozorth_main(&probe_xyt, &gallery_xyt);
+    
+    return match_score;
+}
+
+/*
+ * Versão simplificada: extrai minúcias e faz matching em uma única chamada
+ * probe_data e gallery_data são imagens raw grayscale
+ */
+EXPORT int match_fingerprints_raw(
+    int *match_score,
+    unsigned char *probe_data,
+    const int probe_w,
+    const int probe_h,
+    const int probe_ppi,
+    unsigned char *gallery_data,
+    const int gallery_w,
+    const int gallery_h,
+    const int gallery_ppi)
+{
+    int ret;
+    int probe_count, gallery_count;
+    int probe_x[MAX_BOZORTH_MINUTIAE], probe_y[MAX_BOZORTH_MINUTIAE], probe_theta[MAX_BOZORTH_MINUTIAE], probe_quality[MAX_BOZORTH_MINUTIAE];
+    int gallery_x[MAX_BOZORTH_MINUTIAE], gallery_y[MAX_BOZORTH_MINUTIAE], gallery_theta[MAX_BOZORTH_MINUTIAE], gallery_quality[MAX_BOZORTH_MINUTIAE];
+    
+    if (match_score == NULL || probe_data == NULL || gallery_data == NULL) {
+        return -1;
+    }
+    
+    /* Extrair minúcias da probe */
+    ret = extract_minutiae(probe_data, probe_w, probe_h, probe_ppi,
+                           &probe_count, probe_x, probe_y, probe_theta, probe_quality,
+                           MAX_BOZORTH_MINUTIAE);
+    if (ret != 0) {
+        return -2;
+    }
+    
+    /* Extrair minúcias da gallery */
+    ret = extract_minutiae(gallery_data, gallery_w, gallery_h, gallery_ppi,
+                           &gallery_count, gallery_x, gallery_y, gallery_theta, gallery_quality,
+                           MAX_BOZORTH_MINUTIAE);
+    if (ret != 0) {
+        return -3;
+    }
+    
+    /* Fazer matching */
+    *match_score = bozorth_match(probe_count, probe_x, probe_y, probe_theta,
+                                  gallery_count, gallery_x, gallery_y, gallery_theta);
+    
+    return 0;
+}
+
+/*
+ * Match de duas imagens WSQ
+ */
+EXPORT int match_fingerprints_wsq(
+    int *match_score,
+    unsigned char *probe_wsq,
+    const int probe_wsq_len,
+    unsigned char *gallery_wsq,
+    const int gallery_wsq_len)
+{
+    unsigned char *probe_raw = NULL;
+    unsigned char *gallery_raw = NULL;
+    int probe_w, probe_h, probe_d, probe_ppi, probe_lossy;
+    int gallery_w, gallery_h, gallery_d, gallery_ppi, gallery_lossy;
+    int ret;
+    
+    if (match_score == NULL || probe_wsq == NULL || gallery_wsq == NULL) {
+        return -1;
+    }
+    
+    /* Decodificar probe WSQ */
+    ret = wsq_decode_mem(&probe_raw, &probe_w, &probe_h, &probe_d, &probe_ppi, &probe_lossy, probe_wsq, probe_wsq_len);
+    if (ret != 0) {
+        return -2;
+    }
+    
+    /* Decodificar gallery WSQ */
+    ret = wsq_decode_mem(&gallery_raw, &gallery_w, &gallery_h, &gallery_d, &gallery_ppi, &gallery_lossy, gallery_wsq, gallery_wsq_len);
+    if (ret != 0) {
+        free(probe_raw);
+        return -3;
+    }
+    
+    /* Fazer matching */
+    ret = match_fingerprints_raw(match_score,
+                                  probe_raw, probe_w, probe_h, probe_ppi,
+                                  gallery_raw, gallery_w, gallery_h, gallery_ppi);
+    
+    free(probe_raw);
+    free(gallery_raw);
+    
+    return ret;
+}
 EOF
 ```
 
@@ -497,7 +775,7 @@ cp /c/nbis/include/sys/times.h sys/
 ### 8.2 Compilar a DLL
 
 ```bash
-gcc -shared -o wsq_nfiq_wrapper.dll wsq_nfiq_wrapper.c \
+gcc -shared -o nbis_wrapper.dll nbis_wrapper.c \
     -I/c/nbis/include \
     -L/c/nbis/lib \
     -lnbis \
@@ -505,13 +783,13 @@ gcc -shared -o wsq_nfiq_wrapper.dll wsq_nfiq_wrapper.c \
     -static-libgcc
 ```
 
-Se tudo der certo, você terá o arquivo `wsq_nfiq_wrapper.dll` em `C:\projetos\wsq-dll\`.
+Se tudo der certo, você terá o arquivo `nbis_wrapper.dll` em `C:\projetos\wsq-dll\`.
 
 ### 8.3 Verificar a DLL
 
 ```bash
 # Verificar se a DLL foi criada
-ls -la wsq_nfiq_wrapper.dll
+ls -la nbis_wrapper.dll
 
 # Verificar as funções exportadas
 nm wsq_nifq_wrapper.dll | grep wsq
@@ -602,7 +880,7 @@ gcc -shared -o wsq_wrapper_x86.dll wsq_wrapper.c \
 --- 
 ## 📋 PASSO 10: Usar a DLL no C#
 
-Copie a `wsq_nfiq_wrapper.dll` para a pasta do seu projeto C# e use este código:
+Copie a `nbis_wrapper.dll` para a pasta do seu projeto C# e use este código:
 
 ```csharp
 using System;

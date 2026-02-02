@@ -12,11 +12,11 @@ namespace WsqSharp
             // Define o nome da DLL com base na arquitetura
             if (Environment.Is64BitProcess)
             {
-                DLL_NAME = Path.Combine("x64", "wsq_nfiq_wrapper.dll");
+                DLL_NAME = Path.Combine("x64", "nbis_wrapper.dll");
             }
             else
             {
-                DLL_NAME = Path.Combine("x86", "wsq_nfiq_wrapper.dll");
+                DLL_NAME = Path.Combine("x86", "nbis_wrapper.dll");
             }
 
             // Carrega a DLL manualmente
@@ -48,7 +48,7 @@ namespace WsqSharp
         /// <summary>
         /// Calcula NFIQ de pixels raw grayscale
         /// </summary>
-        [DllImport("wsq_nfiq_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("nbis_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int nfiq_compute_quality(
             out int nfiq_score,
             byte[] idata,
@@ -59,7 +59,7 @@ namespace WsqSharp
         /// <summary>
         /// Versão simplificada - retorna o score diretamente
         /// </summary>
-        [DllImport("wsq_nfiq_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("nbis_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int nfiq_get_score(
             byte[] idata,
             int w,
@@ -69,13 +69,13 @@ namespace WsqSharp
         /// <summary>
         /// Calcula NFIQ de um WSQ em memória
         /// </summary>
-        [DllImport("wsq_nfiq_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("nbis_wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int nfiq_from_wsq_data(
             out int nfiq_score,
             byte[] wsq_data,
             int wsq_len);
 
-        [DllImport("wsq_nfiq_wrapper", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("nbis_wrapper", CallingConvention = CallingConvention.Cdecl)]
         public static extern int nfiq_from_bmp_data(
             out int nfiq_score,
             byte[] bmpData,

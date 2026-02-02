@@ -15,19 +15,19 @@
 	  <None Include="WSQSharp.targets" Pack="true" PackagePath="buildTransitive\" />
 	  
 	  <!-- DLL x64 -->
-	  <None Include="runtimes\win-x64\native\wsq_nfiq_wrapper.dll" Condition="Exists('runtimes\win-x64\native\wsq_nfiq_wrapper.dll')">
+	  <None Include="runtimes\win-x64\native\nbis_wrapper.dll" Condition="Exists('runtimes\win-x64\native\nbis_wrapper.dll')">
 		<PackagePath>runtimes/win-x64/native/</PackagePath>
 		<Pack>true</Pack>
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<Link>x64\wsq_nfiq_wrapper.dll</Link>
+		<Link>x64\nbis_wrapper.dll</Link>
 	  </None>
 	  
 	  <!-- DLL x86 -->
-	  <None Include="runtimes\win-x86\native\wsq_nfiq_wrapper.dll" Condition="Exists('runtimes\win-x86\native\wsq_nfiq_wrapper.dll')">
+	  <None Include="runtimes\win-x86\native\nbis_wrapper.dll" Condition="Exists('runtimes\win-x86\native\nbis_wrapper.dll')">
 		<PackagePath>runtimes/win-x86/native/</PackagePath>
 		<Pack>true</Pack>
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<Link>x86\wsq_nfiq_wrapper.dll</Link>
+		<Link>x86\nbis_wrapper.dll</Link>
 	  </None>
 	</ItemGroup>
 </Project>
